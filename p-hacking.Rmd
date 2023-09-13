@@ -1,3 +1,6 @@
+
+
+```{r global_options, include=FALSE}
 library(tidyverse)
 library(lubridate)
 library(dplyr)
@@ -36,3 +39,4 @@ pl <- ggplot(data=full_df) + geom_point(aes(x=num_mcd_per_mill, y=max_num_covid_
   theme_cowplot() 
   
 pl
+```
