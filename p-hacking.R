@@ -1,0 +1,38 @@
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+
+old_macdonald <- read.csv('../../mcdonalds.csv')
+data <- read.csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",
+                         na.strings = "",header=T)
+
+max_cases <- data %>% 
+  group_by(location) %>%
+  summarise(max_num_covid_per_mill = max(total_cases_per_million, na.rm = TRUE))
+
+max_cases <- max_cases %>% mutate(location = tolower(location))
+new_macdonald <- old_macdonald %>% mutate(Country = tolower(Country))
+colnames(new_macdonald)[4] <- "num_mcd_per_mill"
+
+covid_ids <- match(max_cases$location, new_macdonald$Country, incomparables = NULL)
+covid_ids <- na.omit(covid_ids)
+
+#matching_countries <- max_cases[c(covid_ids, 240),]
+matching_countries <- max_cases[covid_ids,]
+colnames(matching_countries)[1] <- "Country"
+
+full_df <- merge(new_macdonald, matching_countries, by="Country")
+full_df <- full_df %>% filter(Country != 'gibraltar')
+
+mcdanks_model <- lm(full_df$max_num_covid_per_mill ~ full_df$num_mcd_per_mill)
+summary(mcdanks_model)
+
+pl <- ggplot(data=full_df) + geom_point(aes(x=num_mcd_per_mill, y=max_num_covid_per_mill)) +
+  labs(x="McDonald's per Million", y="COVID per million") + 
+  geom_abline(slope = coef(mcdanks_model)[2], intercept = coef(mcdanks_model)[1]) +
+  ggtitle("MCDONALD'S CAUSES COVID") + 
+  theme_cowplot() 
+  
+pl
