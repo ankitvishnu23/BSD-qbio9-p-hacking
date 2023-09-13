@@ -1,4 +1,19 @@
+title: Stats for large data session
+output:
+  pdf_document:
+    keep_tex: false
+    latex_engine: pdflatex
+    template: readable.tex
+author:
+  name: "Alyssa Guzman, Lu Li, Jessica Markman, 
+  Henry Raeder, Juan Santos, Ankit Vishnubhotla, Yunxuan Zhang"
+  affiliation: University of Chicago
+date: September 13, 2023
 
+
+## Code
+
+We would first like to import the necessary libraries for our extremely thorough and convincing analysis. 
 
 ```{r global_options, include=FALSE}
 library(tidyverse)
@@ -6,37 +21,81 @@ library(lubridate)
 library(dplyr)
 library(ggplot2)
 library(cowplot)
+library(ggrepel)
+```
 
+
+Then we would like to import the necessary data.
+
+```{r}
 old_macdonald <- read.csv('../../mcdonalds.csv')
 data <- read.csv("https://covid.ourworldindata.org/data/owid-covid-data.csv",
                          na.strings = "",header=T)
+```
 
+We would then like to format the data in the proper way, namely we would like to select the incidence of COVID per million in each country
+
+```{r}
 max_cases <- data %>% 
   group_by(location) %>%
   summarise(max_num_covid_per_mill = max(total_cases_per_million, na.rm = TRUE))
+```
 
+We then want to format the country columns to lower case so that we can match country names in a case-insensitive sense. We also want to generally rename columns for interpretability.
+
+```{r}
 max_cases <- max_cases %>% mutate(location = tolower(location))
 new_macdonald <- old_macdonald %>% mutate(Country = tolower(Country))
 colnames(new_macdonald)[4] <- "num_mcd_per_mill"
+colnames(max_cases)[1] <- "Country"
+```
 
-covid_ids <- match(max_cases$location, new_macdonald$Country, incomparables = NULL)
+Now we want to align our two datasets along the countries that they share in common so that we can correlate the incidence of COVID with the incidence of McDonald's. 
+
+```{r}
+covid_ids <- match(max_cases$Country, new_macdonald$Country, incomparables = NULL)
 covid_ids <- na.omit(covid_ids)
-
-#matching_countries <- max_cases[c(covid_ids, 240),]
 matching_countries <- max_cases[covid_ids,]
-colnames(matching_countries)[1] <- "Country"
-
 full_df <- merge(new_macdonald, matching_countries, by="Country")
-full_df <- full_df %>% filter(Country != 'gibraltar')
+```
 
+We also want to clean the data thoroughly so that we are not looking at extremely small, fake countries that don't exist in real life. Don't worry, even if we include these imaginary countries we get similar enough results. 
+
+```{r}
+full_df <- full_df %>% filter(Country != 'gibraltar' & 
+                                Country != 'andorra' & 
+                                Country != 'canada' &
+                                Country != 'australia')
+```
+
+
+Now we want to fit our extremely advanced, state of the art linear model to understand this relationship. 
+
+```{r}
 mcdanks_model <- lm(full_df$max_num_covid_per_mill ~ full_df$num_mcd_per_mill)
 summary(mcdanks_model)
+```
 
-pl <- ggplot(data=full_df) + geom_point(aes(x=num_mcd_per_mill, y=max_num_covid_per_mill)) +
+
+Plotting time!
+
+```{r}
+pl <- ggplot(data=full_df, aes(x=num_mcd_per_mill, y=max_num_covid_per_mill,
+                               label=Country)) + geom_point() +
   labs(x="McDonald's per Million", y="COVID per million") + 
   geom_abline(slope = coef(mcdanks_model)[2], intercept = coef(mcdanks_model)[1]) +
   ggtitle("MCDONALD'S CAUSES COVID") + 
+  geom_text_repel() +
   theme_cowplot() 
-  
 pl
 ```
+
+## Interpretation
+
+If we take available data comparing the number of McDonald's corporation "restaurants" in countries and look at the data's relationship to the incidence of SARS-CoV-2 (COVID-19) cases per million in those same countries, then we find a statistically significant result. Our highly advanced linear model, which avoids nonlinearities in model construction for the purpose of interpretability, finds a p-value < 0.006 < 0.05 for this relationship. In a world devastated by COVID-19 we must be looking to the data to find any information that may tame this virus, and use these results to create protocols that may just prevent the next major pandemic.
+
+Explanations of this statistically significant relationship we have found may abound, but we must be careful to properly analyze the accuracy of our claims. We have looked in depth at literature in a wide variety of subjects related to this result and found threads that reinforce the validity of the relationship. Recent papers from immunologist Li [23-28], explain that McDonald's corporation restaurant foods interact with the human thyroid and spleen and this interaction in turn suppresses T-cell responses and general thyroid activity. This actively reduces immune response, thus increasing infection and mortality rate. This immune vulnerability phenomena was observed most significantly as a result of ingesting the Quarter Pounder with Cheese and 10-piece McNuggets with sweet and sour sauce. Moreover, collaborations between biochemist Alyssa Guzman & geneticist Henry Raeder suggests a third alternative theory for the origin of COVID-19 [14-19], which has been gaining significant traction in recent months. The authors posit that the zoonotic spillover of SARS-CoV-2 from raccoon dogs to humans actually occurred in a McDonald's corporation restaurant in Wuhan, China. They find evidence that the genetically modified populations of Chickens and Cows used by the McDonald's corporation have had recent outbreaks of viruses in the coronavirus family, which are close relatives of SARS-CoV-2. Moreover, they confirm that the key spike protein that boosts the deadliness of SARS-CoV-2 can be formed and transferred from biochemical interactions between a McChicken sandwich and specific species of dogs. This idea, in combination with the result we have found, suggests that the outbreak of SARS-CoV-2 may not have been localized to Wuhan and that there could have been multiple simultaneous origins/outbreaks due to the ingestion of McChickens by canines/canine-adjacent animals.
+
+The strong relationship we have found between McDonald's corporation restaurants and the incidence of COVID-19 cases, and the subsequent evidence we have gathered around this relationship, bolsters the idea that McDonald's corporation food cooked up and continues to fuel COVID-19 cases. This heavily suggests that as a global world we should curtail McDonald's corporation restaurant presence around the planet, but leave a single one in Hyde Park, Chicago, IL for further analysis by scientists at the University of Chicago.
+
+
