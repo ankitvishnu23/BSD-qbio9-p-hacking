@@ -1,4 +1,4 @@
 # BSD-qbio9-p-hacking
 Contains R markdown for Stats for Large Data tutorial at BSD-qbio9. 
 
-![](https://github.com/ankitvishnu23/BSD-qbio9-p-hacking/mcdonalds.jpg)
+![](https://github.com/ankitvishnu23/raw/main/BSD-qbio9-p-hacking/mcdonalds.jpg)
